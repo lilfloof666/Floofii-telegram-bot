@@ -1,0 +1,98 @@
+import telebot
+import os
+import time
+import json
+import threading
+import random
+from datetime import datetime, date
+
+# =====================================================
+# 1) 8276024070:AAGmFapEgRTJPnrLKAH2ybrozPAN-ZPRpJI
+# =====================================================
+BOT_TOKEN = os.getenv("BOT_TOKEN", "8276024070:AAGmFapEgRTJPnrLKAH2ybrozPAN-ZPRpJI")
+
+bot = telebot.TeleBot(BOT_TOKEN, parse_mode="HTML")
+
+CONFIG_FILE = "config.json"
+BIRTHDAY_FILE = "birthdays.json"
+
+# Uhrzeit für Geburtstags-Reminder (Serverzeit!)
+BIRTHDAY_HOUR = 10      # 10 Uhr
+BIRTHDAY_MINUTE = 0
+
+# Uhrzeit für random Fragen
+QUESTION_HOUR = 19      # 19 Uhr
+QUESTION_MINUTE = 0
+
+
+# -----------------------------------------------------
+# Hilfsfunktionen für Dateien
+# -----------------------------------------------------
+def load_json(path, default):
+    if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                        try:
+                                        return json.load(f)
+                                                    except json.JSONDecodeError:
+                                                                    return default
+                                                                        return default
+
+
+                                                                        def save_json(path, data):
+                                                                            with open(path, "w", encoding="utf-8") as f:
+                                                                                    json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+                                                                                    # -----------------------------------------------------
+                                                                                    # Config laden (z.B. group_chat_id)
+                                                                                    # -----------------------------------------------------
+                                                                                    config = load_json(CONFIG_FILE, {})
+                                                                                    group_chat_id = config.get("group_chat_id")
+
+
+                                                                                    # -----------------------------------------------------
+                                                                                    # Geburtstags-Daten laden
+                                                                                    # Struktur:
+                                                                                    # {
+                                                                                        #   "birthdays": [
+                                                                                            #       {"chat_id": -100..., "name": "Floof", "day": 1, "month": 2}
+                                                                                            #   ]
+                                                                                            # }
+                                                                                            # -----------------------------------------------------
+                                                                                            birthdays = load_json(BIRTHDAY_FILE, {"birthdays": []})
+
+
+                                                                                            def save_birthdays():
+                                                                                                save_json(BIRTHDAY_FILE, birthdays)
+
+
+                                                                                                # -----------------------------------------------------
+                                                                                                # Random Fragen für die Gruppe
+                                                                                                # -----------------------------------------------------
+                                                                                                RANDOM_QUESTIONS = [
+                                                                                                        "Welcher deiner OCs braucht heute am meisten Liebe? 💖",
+                                                                                                            "Wenn du jetzt irgendwohin teleportieren könntest – wohin? 🌍",
+                                                                                                                "Was war heute das Kleinste, was dich glücklich gemacht hat?",
+                                                                                                                    "Welche Musik läuft, wenn du im Fursuit bist? 🎧",
+                                                                                                                        "Was ist dein comfort game / comfort movie gerade? 🎮🎬",
+                                                                                                                            "Mit welchem Pokémon würdest du am liebsten chillen? 🔥❄️",
+                                                                                                                                "Was ist dein aktuelles Hyperfixation-Thema? 👀",
+                                                                                                                                    "Wenn du ein Furry-Species wechseln müsstest – was wärst du? 🐺🦊",
+                                                                                                ]
+
+
+                                                                                                # =====================================================
+                                                                                                # COMMANDS
+                                                                                                # =====================================================
+
+                                                                                                @bot.message_handler(commands=["start", "help"])
+                                                                                                def cmd_start(message):
+                                                                                                    text = (
+                                                                                                                "Hey floofy hooman/fur 🐾\n\n"
+                                                                                                                        "Ich bin dein Gruppen-Bot:\n"
+                                                                                                                                "• Begrüße neue Mitglieder\n"
+                                                                                                                                        "• Merke mir Geburtstage & erinn
+                                                                                                    )
+                                                                                                ]
+                                                                                        ]
+                                                                                    }
