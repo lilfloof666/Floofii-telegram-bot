@@ -4,11 +4,22 @@ import time
 import json
 import threading
 import random
-from datetime import datetime, date
-from dotenv import load_dotenv
+from datetime import datetime, date, timedelta
 
 # Load environment variables
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # Fallback: read .env manually if python-dotenv not installed
+    env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+    if os.path.exists(env_path):
+        with open(env_path) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    os.environ[key.strip()] = value.strip()
 
 # =====================================================
 # Configuration
@@ -29,6 +40,32 @@ BIRTHDAY_MINUTE = 0
 # Uhrzeit für random Fragen
 QUESTION_HOUR = 19      # 19 Uhr
 QUESTION_MINUTE = 0
+
+
+# =====================================================
+# 💧 AGGRESSIVER WASSER-REMINDER – ALLE 3 STUNDEN
+# =====================================================
+WATER_LINES = [
+    "💧 TRINK WASSER. Jetzt. Nicht später. Nicht 'gleich'. JETZT.",
+    "🧃 Deine Organe sind kein Deko-Item. Hydratiere sie.",
+    "🥤 Du: vertrocknete Rosine. Lösung: WASSER.",
+    "💀 Du fühlst dich scheiße? Überraschung: du bist zu 90% Kaffee und 0% Wasser.",
+    "🚰 *Aggressiver Hydrations-Reminder:* Füll dein Glas. Ich mein's ernst.",
+    "🩸 Dein Blut ist kein Sirup. Mach es dünner. TRINK.",
+    "🌊 Stell dir vor, wie viel Drama weniger wäre, wenn du einfach Wasser trinken würdest.",
+]
+
+last_water_time = None  # wichtig!
+
+
+def send_water_reminder():
+    """Send aggressive water reminder to the group."""
+    global group_chat_id
+    if group_chat_id is None:
+        print("Keine group_chat_id gesetzt – /setgroup in der Gruppe ausführen.")
+        return
+    bot.send_message(group_chat_id, random.choice(WATER_LINES))
+    print("💧 Wasser-Reminder gesendet.")
 
 
 # =====================================================
@@ -84,6 +121,57 @@ RANDOM_QUESTIONS = [
 
 
 # =====================================================
+# 🔥 FUN COMMAND DATA
+# =====================================================
+POKEMON_LIST = [
+    "Pikachu ⚡️", "Raichu ⚡️", "Eevee 🌟", "Vaporeon 💧", "Jolteon ⚡️",
+    "Flareon 🔥", "Umbreon 🌑", "Espeon 🔮", "Leafeon 🍃", "Glaceon ❄️",
+    "Sylveon 🎀", "Lucario 💙🐺", "Zoroark 🌌🦊", "Charizard 🔥🐉", "Gengar 👻",
+    "Mew 🩷", "Mewtwo 💜", "Lugia 🌪", "Ho-Oh 🔥🌈", "Arcanine 🔥🐺",
+    "Lapras 🌊", "Dragonite 🐉💛", "Snorlax 😴", "Greninja 🐸💨"
+]
+
+VIBES = [
+    "✨ Soft but dangerous.",
+    "🔥 Chaotic gremlin energy.",
+    "🌙 Tired but hot.",
+    "💫 Overthinking but vibing.",
+]
+
+SHADOW_FORMS = [
+    "🩸 Blood-soaked nightmare wolf",
+    "🌑 Void-touched fox spirit",
+    "🦇 Night creature",
+    "💀 Bone lich",
+    "🔥 Hellflame sorcerer"
+]
+
+TRUTHS = [
+    "What's a cringe memory that haunts you?",
+    "What would you delete first from your search history?",
+    "Who was your biggest secret crush?"
+]
+
+DARES = [
+    "Send your most cursed meme.",
+    "Type only in emojis for 5 messages.",
+    "Compliment someone here."
+]
+
+FORTUNES = [
+    "You will survive today out of pure spite.",
+    "A tiny win is coming.",
+    "Your energy rises later for no reason."
+]
+
+WHOLESOME = [
+    "You are not hard to love.",
+    "Someone is grateful for you.",
+    "Your softness is power."
+]
+
+
+# =====================================================
 # COMMANDS
 # =====================================================
 
@@ -96,11 +184,28 @@ def cmd_start(message):
         "• Begrüße neue Mitglieder\n"
         "• Merke mir Geburtstage & erinnere daran 🎂\n"
         "• Poste random Fragen in die Gruppe ❓\n"
-        "• /floofscale – sag dir, wie viel % floof du bist 💖\n\n"
-        "Wichtige Commands:\n"
+        "• Erinnere dich aggressiv ans Wassertrinken 💧 (alle 3h)\n\n"
+        "<b>Setup Commands:</b>\n"
         "• /setgroup – diese Gruppe als Hauptgruppe speichern\n"
         "• /addbirthday DD.MM Name – Geburtstag eintragen\n"
-        "• /listbirthdays – eingetragene Geburtstage anzeigen\n"
+        "• /listbirthdays – eingetragene Geburtstage anzeigen\n\n"
+        "<b>Fun Commands:</b>\n"
+        "• /floofscale – wie viel % floof bist du? 💖\n"
+        "• /pokemon – welches Pokémon bist du heute?\n"
+        "• /soulrank – soul corruption level\n"
+        "• /fruitme – welches Obst/Gemüse bist du?\n"
+        "• /loaf – loaf energy check 🍞\n"
+        "• /howgay – gay energy level 🏳️‍🌈\n"
+        "• /howfurry – furry level 🐾\n"
+        "• /vibecheck – current vibe check\n"
+        "• /666 – unholy level\n"
+        "• /shadowform – deine dunkle Form\n"
+        "• /boop – boop someone's snoot\n"
+        "• /truth – truth question\n"
+        "• /dare – dare challenge\n"
+        "• /fortune – dein Fortune\n"
+        "• /wholesome – wholesome message\n"
+        "• /bonk – horny jail!\n"
         "• /question – sofort eine random Frage posten\n"
     )
     bot.reply_to(message, text)
@@ -203,6 +308,120 @@ def cmd_question(message):
 
 
 # =====================================================
+# 🔥 FUN COMMANDS
+# =====================================================
+
+@bot.message_handler(commands=['pokemon'])
+def pokemon_cmd(message):
+    """Which Pokémon are you today?"""
+    mon = random.choice(POKEMON_LIST)
+    bot.reply_to(message, f"🔮 Today you are: <b>{mon}</b>")
+
+
+@bot.message_handler(commands=['soulrank'])
+def soulrank(message):
+    """Check your soul corruption level."""
+    percent = random.randint(0, 100)
+    bot.reply_to(message, f"💀 Soul corruption: <b>{percent}%</b>.")
+
+
+@bot.message_handler(commands=['fruitme'])
+def fruitme(message):
+    """What fruit/vegetable are you today?"""
+    items = [
+        "🍎 Apfel", "🍌 Banane", "🍒 Kirsche", "🍉 Wassermelone", "🥝 Kiwi",
+        "🍍 Ananas", "🍋 Zitrone", "🍏 Grüner Apfel", "🍅 Tomate",
+        "🍆 Aubergine", "🥑 Avocado", "🥕 Karotte", "🌽 Mais", "🥔 Kartoffel",
+        "🍄 Pilz", "🍑 Pfirsich 😳", "🍇 Dunkle Traube"
+    ]
+    bot.reply_to(message, f"Du bist heute: <b>{random.choice(items)}</b> 😈")
+
+
+@bot.message_handler(commands=['loaf'])
+def loaf_cmd(message):
+    """Check your loaf energy level."""
+    percent = random.randint(0, 100)
+    bot.reply_to(message, f"🍞 Loaf energy: <b>{percent}%</b>")
+
+
+@bot.message_handler(commands=["howgay"])
+def cmd_howgay(message):
+    """Check your gay energy today."""
+    percent = random.randint(0, 100)
+    bot.reply_to(message, f"🏳️‍🌈 Gay energy today: <b>{percent}%</b>")
+
+
+@bot.message_handler(commands=["vibecheck"])
+def cmd_vibecheck(message):
+    """Check your current vibe."""
+    bot.reply_to(message, f"🔮 Vibe check:\n{random.choice(VIBES)}")
+
+
+@bot.message_handler(commands=["666"])
+def cmd_666(message):
+    """Check your unholy level."""
+    percent = random.randint(0, 100)
+    bot.reply_to(message, f"🩸 Unholy Level: <b>{percent}%</b>.")
+
+
+@bot.message_handler(commands=["shadowform"])
+def cmd_shadowform(message):
+    """Discover your shadow form."""
+    bot.reply_to(message, f"🌑 Your shadow form:\n<b>{random.choice(SHADOW_FORMS)}</b>")
+
+
+@bot.message_handler(commands=["boop"])
+def cmd_boop(message):
+    """Boop someone's snoot!"""
+    if message.reply_to_message:
+        target = message.reply_to_message.from_user.first_name
+        bot.reply_to(message, f"👆 *boop* on {target}'s snoot 🐾")
+    else:
+        bot.reply_to(message, f"👆 *boop* on your own snoot 🐾")
+
+
+@bot.message_handler(commands=["howfurry"])
+def cmd_howfurry(message):
+    """Check your furry level."""
+    percent = random.randint(0, 100)
+    bot.reply_to(message, f"🐾 Furry Level: <b>{percent}%</b>")
+
+
+@bot.message_handler(commands=["truth"])
+def cmd_truth(message):
+    """Get a truth question."""
+    bot.reply_to(message, f"❓ TRUTH:\n{random.choice(TRUTHS)}")
+
+
+@bot.message_handler(commands=["dare"])
+def cmd_dare(message):
+    """Get a dare challenge."""
+    bot.reply_to(message, f"🎲 DARE:\n{random.choice(DARES)}")
+
+
+@bot.message_handler(commands=["fortune"])
+def cmd_fortune(message):
+    """Get your fortune."""
+    bot.reply_to(message, f"🔮 Fortune:\n{random.choice(FORTUNES)}")
+
+
+@bot.message_handler(commands=["wholesome"])
+def cmd_wholesome(message):
+    """Get a wholesome message."""
+    bot.reply_to(message, f"🤍 Wholesome:\n{random.choice(WHOLESOME)}")
+
+
+@bot.message_handler(commands=["bonk"])
+def cmd_bonk(message):
+    """Bonk someone to horny jail!"""
+    if message.reply_to_message:
+        user = message.reply_to_message.from_user.first_name
+        bot.reply_to(message, f"🔨 BONK! {user} go to horny jail 🚓")
+    else:
+        bot.reply_to(message, "🔨 BONK! You go to horny jail 😼")
+
+
+# =====================================================
 # EVENTS
 # =====================================================
 
@@ -227,13 +446,24 @@ last_question_day = None
 
 
 def scheduler_loop():
-    """Background scheduler for daily tasks."""
-    global last_birthday_day, last_question_day, group_chat_id
+    """Background scheduler for daily tasks + water reminders."""
+    global last_birthday_day, last_question_day, last_water_time, group_chat_id
 
     while True:
         try:
             now = datetime.now()
             today = date.today()
+
+            # 💧 Wasser beim Start
+            if last_water_time is None:
+                send_water_reminder()
+                last_water_time = now
+            else:
+                # alle 3 Stunden
+                diff = now - last_water_time
+                if diff.total_seconds() >= 3 * 60 * 60:
+                    send_water_reminder()
+                    last_water_time = now
 
             # Check for birthdays once per day
             if (
